@@ -1,0 +1,17 @@
+all: libvga vga
+
+libvga: libvga.o
+	ar rcs libvga.a libvga.o
+
+vga: vga.o
+	echo "done"
+
+vga.o: vga.c
+	gcc -static vga.c -L. -lvga -o vga.exe
+	
+libvga.o: libvga.c
+	gcc -c libvga.c -o libvga.o
+clean:
+	del libvga.o
+	del libvga.a
+	del vga.exe
