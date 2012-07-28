@@ -1,0 +1,11 @@
+Functions
+
+set_mode(int mode);     sets video mode
+plot_pixel_bios(int x, int y, byte color);      plots a pixel using BIOS functions
+plot_pixel_memory(int x, int y, byte color);    plots a pixel by writing to video memory
+line_slow(int x1, int y1, int x2, int y2, byte color);  plots a line by using multiplication and divison
+line_fast(int x1, int y1, int x2, int y2, byte color);  plots a line by using Bresenham's algorithm
+polygon(int num_vertices, int *vertices, byte color);   plots a polygon
+rect_slow(int left, int top, int right, int bottom, byte color);        draws rectangle by calling the line_fast function
+rect_fast(int left, int top, int right, int bottom, byte color);        draws a rectange by drawing lines by itself
+
