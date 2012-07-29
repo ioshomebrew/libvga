@@ -4,6 +4,12 @@ byte *VGA = (byte *)0xA0000;
 
 void set_mode(int mode)
 {
+ int i;
+ for(i=0;i<1024;i++)                 /* create the sin(arccos(x)) table. */
+ {    
+  SIN_ACOS[i]=sin(acos((float)i/1024))*0x10000L;
+ }
+
  union REGS regs;
 
  regs.h.ah = 0x00;
@@ -168,3 +174,105 @@ void rect_fast(int left, int top, int right, int bottom, byte color)
   VGA[right+i]=color;
  }
 }
+
+void rect_fill(int left, int top, int right, int bottom, byte color)
+{
+ word top_offset,bottom_offset,i,temp,width;
+
+ if (top>bottom)
+ {
+  temp=top;
+  top=bottom;
+  bottom=temp;
+ }
+ if (left>right)
+ {
+  temp=left;
+  left=right;
+  right=temp;
+ }
+
+ top_offset=(top<<8)+(top<<6)+left;
+ bottom_offset=(bottom<<8)+(bottom<<6)+left;
+ width=right-left+1;
+
+ for(i=top_offset;i<=bottom_offset;i+=320)
+ {
+  memset(&VGA[i],color,width);
+ }
+}
+
+void circle_slow(int x, int y, int radius, byte color)
+{
+ float n=0,invradius=1/(float)radius;
+ int dx=0, dy=radius-1;
+ word dxoffset,dyoffset,offset=(y<<8)+(y<<6)+x;
+
+ while (dx<=dy)
+ {
+  dxoffset = (dx<<8) + (dx<<6);
+  dyoffset = (dy<<8) + (dy<<6);
+  VGA[offset+dy-dxoffset] = color;      // octant 0
+  VGA[offset+dx-dyoffset] = color;      // octant 1
+  VGA[offset-dx-dyoffset] = color;      // octant 2
+  VGA[offset-dy-dxoffset] = color;      // octant 3
+  VGA[offset-dy+dxoffset] = color;      // octant 4
+  VGA[offset-dx+dyoffset] = color;      // octant 5
+  VGA[offset+dx+dyoffset] = color;      // octant 6
+  VGA[offset+dy+dxoffset] = color;      // octant 7
+  dx++;
+  n+=invradius;
+  dy=radius * sin(acos(n));
+ }
+}
+
+void circle_fast(int x, int y, int radius, byte color)
+{
+ fixed16_16 n=0,invradius=(1/(float)radius)*0x10000L;
+ int dx=0,dy=radius-1;
+ word dxoffset,dyoffset,offset = (y<<8)+(y<<6)+x;
+
+ while (dx<=dy)
+ {
+  dxoffset = (dx<<8) + (dx<<6);
+  dyoffset = (dy<<8) + (dy<<6);
+  VGA[offset+dy-dxoffset] = color;      // octant 0
+  VGA[offset+dx-dyoffset] = color;      // octant 1
+  VGA[offset-dx-dyoffset] = color;      // octant 2
+  VGA[offset-dy-dxoffset] = color;      // octant 3
+  VGA[offset-dy+dxoffset] = color;      // octant 4
+  VGA[offset-dx+dyoffset] = color;      // octant 5
+  VGA[offset+dx+dyoffset] = color;      // octant 6
+  VGA[offset+dy+dxoffset] = color;      // octant 7
+  dx++;
+  n+=invradius;
+  dy = (int)((radius * SIN_ACOS[(int)(n>>6)]) >> 16);
+ }
+}
+
+void circle_fill(int x, int y, int radius, byte color)
+{
+ fixed16_16 n=0,invradius=(1/(float)radius)*0x10000L;
+ int dx=0,dy=radius-1,i;
+ word dxoffset,dyoffset,offset = (y<<8)+(y<<6)+x;
+
+ while (dx<=dy)
+ {
+    dxoffset = (dx<<8)+(dx<<6);
+    dyoffset = (dy<<8)+(dy<<6);
+    for(i=dy;i>=dx;i--,dyoffset-=320)
+    {
+      VGA[offset+i -dxoffset] = color;  // octant 0
+      VGA[offset+dx-dyoffset] = color;  // octant 1
+      VGA[offset-dx-dyoffset] = color;  // octant 2
+      VGA[offset-i -dxoffset] = color;  // octant 3
+      VGA[offset-i +dxoffset] = color;  // octant 4
+      VGA[offset-dx+dyoffset] = color;  // octant 5
+      VGA[offset+dx+dyoffset] = color;  // octant 6
+      VGA[offset+i +dxoffset] = color;  // octant 7
+    }
+    dx++;
+    n+=invradius;
+    dy = (int)((radius * SIN_ACOS[(int)(n>>6)]) >> 16);
+ }
+}  

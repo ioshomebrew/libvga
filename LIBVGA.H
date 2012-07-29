@@ -2,11 +2,15 @@
 #include <stdlib.h>
 #include <sys/nearptr.h>
 #include <dos.h>
+#include <math.h>
 
 #define sgn(x) ((x<0)?-1:((x>0)?1:0))
 
 typedef unsigned char byte;
 typedef unsigned short word;
+typedef long           fixed16_16;
+
+fixed16_16 SIN_ACOS[1024];
 
 extern byte *VGA;
 
@@ -18,5 +22,7 @@ void line_fast(int x1, int y1, int x2, int y2, byte color);
 void polygon(int num_vertices, int *vertices, byte color);
 void rect_slow(int left, int top, int right, int bottom, byte color);
 void rect_fast(int left, int top, int right, int bottom, byte color);
-
-
+void rect_fill(int left, int top, int right, int bottom, byte color);
+void circle_slow(int x, int y, int radius, byte color);
+void circle_fast(int x, int y, int radius, byte color);
+void circle_fill(int x, int y, int radius, byte color);
