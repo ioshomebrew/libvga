@@ -5,17 +5,24 @@ int main()
  int x,x1,x2,y,y1,y2,color, radius;
  float t1,t2;
  word i,start;
+ BITMAP bmp; 
+
+ // load all files/bitmaps here
+ load_bmp("rocket.bmp", &bmp);
 
  set_mode(0x13);
  VGA+=__djgpp_conventional_base;
+ my_clock = (void *)my_clock + __djgpp_conventional_base;
 
- plot_pixel_memory(100,100,1);
+ draw_bitmap(&bmp,150,10); 
 
- line_slow(5, 5, 10, 10, 5);
+ // plot_pixel_memory(100,100,1);
 
- rect_fill(200, 50, 250, 50, 13);
+ // line_slow(5, 5, 10, 10, 5);
 
- circle_fast(100, 100, 40, 10);
+ // rect_fill(200, 50, 250, 50, 13);
+
+ // circle_fast(100, 100, 40, 10);
 
  radius=rand()%90+1;
  x=rand()%(320-radius*2)+radius;

@@ -1,6 +1,7 @@
 #include "libvga.h"
 
 byte *VGA = (byte *)0xA0000;
+word *my_clock = (word *)0x046C;
 
 void set_mode(int mode)
 {
@@ -275,4 +276,111 @@ void circle_fill(int x, int y, int radius, byte color)
     n+=invradius;
     dy = (int)((radius * SIN_ACOS[(int)(n>>6)]) >> 16);
  }
-}  
+}
+
+// bitmap
+void fskip(FILE *fp, int num_bytes)
+{
+ int i;
+ for (i=0; i<num_bytes; i++)
+     fgetc(fp);
+}
+
+void load_bmp(char *file, BITMAP *b)
+{
+ FILE *fp;
+ long index;
+ word num_colors;
+ int x;
+
+ // open the file
+ if ((fp = fopen(file,"rb")) == NULL)
+ {
+  printf("File opening file %s.\n", file);
+  exit(1);
+ }
+
+ // check to see if the file is valid
+ if (fgetc(fp)!='B' || fgetc(fp)!='M')
+ {
+  fclose(fp);
+  printf("%s is not a valid bitmap file.\n", file);
+  exit(1);
+ }
+
+ // read width and height of the image, and colors used
+ fskip(fp,16);
+ fread(&b->width, sizeof(word), 1, fp);
+ fskip(fp,2);
+ fread(&b->height, sizeof(word), 1, fp);
+ fskip(fp,22);
+ fread(&num_colors, sizeof(word), 1, fp);
+ fskip(fp,6);
+
+ // assume we are working with an 8bit file
+ if (num_colors==0)
+    num_colors=256;
+
+ // try to alloc memory
+ if ((b->data = (byte *) malloc((word)(b->width*b->height))) == NULL)
+ {
+  fclose(fp);
+  printf("Error allocating memory for file %s.\n", file);
+  exit(1);
+ }
+
+ // ignore pallet info
+ fskip(fp,num_colors*4);
+
+ // read bitmap
+ for(index=(b->height-1)*b->width;index>=0;index-=b->width)
+   for(x=0;x<b->width;x++)
+     b->data[(word)index+x]=(byte)fgetc(fp);
+
+ fclose(fp);
+}
+
+void draw_bitmap(BITMAP *bmp,int x,int y)
+{
+ int j;
+ word screen_offset = (y<<8)+(y<<6)+x;
+ word bitmap_offset = 0;
+
+ for(j=0;j<bmp->height;j++)
+ {
+  memcpy(&VGA[screen_offset],&bmp->data[bitmap_offset],bmp->width);
+
+  bitmap_offset+=bmp->width;
+  screen_offset+=320;
+ }
+}
+
+void draw_transparent_bitmap(BITMAP *bmp, int x, int y)
+{
+ int i,j;
+ word screen_offset = (y<<8)+(y<<6);
+ word bitmap_offset = 0;
+ byte data;
+
+ for(j=0;j<bmp->height;j++)
+ {
+  for(i=0;i<bmp->width;i++,bitmap_offset++)
+  {
+   data = bmp->data[bitmap_offset];
+   if (data) VGA[screen_offset+x+i] = data;
+  }
+  screen_offset+=320;
+ }
+} 
+
+void wait(int ticks)
+{
+ word start;
+
+ start=*my_clock;
+
+ while (*my_clock-start<ticks)
+ {
+  *my_clock=*my_clock;
+ }
+} 

@@ -12,3 +12,10 @@ void rect_fill(int left, int top, int right, int bottom, byte color);	draws a re
 void circle_slow(int x, int y, int radius, byte color);		draws a circle by using floating point numbers and math fuctions
 void circle_fast(int x, int y, int radius, byte color);		draws a circle by using fixed point numbers and a trigonometry table
 void circle_fill(int x, int y, int radius, byte color);		draws a cirlce and fills it with the selected color
+
+Bitmaps
+void fskip(FILE *fp, int num_bytes)		Skips bytes in a file
+void load_bmp(char *file, BITMAP *b);	Load a bmp file into memory
+void draw_bitmap(BITMAP *bmp,int x,int y);	draws a bitmap
+void draw_transparent_bitmap(BITMAP *bmp, int x, int y);	draws a transparent bitmap
+void wait(int ticks);	waits an amount of ticks (18hz clock)
